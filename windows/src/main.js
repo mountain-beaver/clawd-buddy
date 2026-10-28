@@ -165,6 +165,7 @@ function applyLoginItem() {
 
 ipcMain.handle("get-state", () => ({
   prefs: prefs.public, hooks: hooks.status(), platform: process.platform, canLaunchAtLogin: isWin || isMac,
+  version: app.getVersion(),
 }));
 ipcMain.handle("set-pref", (_e, key, value) => { setPref(key, value); return prefs.public; });
 ipcMain.handle("demo", () => runCommand("demo"));
@@ -187,15 +188,12 @@ function startServer() {
       res.writeHead(404).end();
       return;
     }
-    let body = "";
-    req.on("data", (chunk) => {
-      body += chunk;
-      if (body.length > 2_000_000) req.destroy();
-    });
-    req.on("end", () => {
+    hooks.readBody(req).then((body) => {
       // Answer right away so Claude Code never waits on us.
       res.writeHead(200, { "Content-Type": "application/json" }).end("{}");
       try { sendToBuddy("hook", hooks.normalize(JSON.parse(body))); } catch {}
+    }).catch(() => {
+      if (!res.writableEnded) res.writeHead(413).end();
     });
   });
   server.on("error", (e) => console.error("hook server:", e.message));
