@@ -27,9 +27,7 @@ jobs:
           path: windows/dist/*.exe
           if-no-files-found: error
 
-  # macOS runners are expensive on private repos, so only build them for releases.
   macos:
-    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4

@@ -4,7 +4,7 @@
   "version": "1.1.0",
   "description": "A pixel crab desktop companion that reacts to Claude Code (unofficial fan project)",
   "author": "pe4enku0",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "private": true,
   "main": "src/main.js",
   "scripts": {

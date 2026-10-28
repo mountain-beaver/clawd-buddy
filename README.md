@@ -41,7 +41,7 @@ Lines are a mix of what's actually happening and 150+ phrases per language, time
 
 The app is unsigned, so SmartScreen may warn you. Click **More info → Run anyway**.
 
-The Windows version talks to Claude Code through HTTP hooks on `127.0.0.1:47321`. It starts with Windows by default (you can turn that off in Settings). That matters because while the app is closed, Claude Code can't reach it. **Disconnect** in Settings removes the hooks again.
+The Windows version talks to Claude Code through HTTP hooks on `127.0.0.1:47321`, at a URL with a random per-install token so other programs and web pages can't send it fake events. It starts with Windows by default (you can turn that off in Settings). That matters because while the app is closed, Claude Code can't reach it. **Disconnect** in Settings removes the hooks again.
 
 ## macOS
 
@@ -77,7 +77,7 @@ Settings:
 |---|---|
 | `macos/` | native Swift/AppKit + SwiftUI app; `build.sh`, `install.sh`, `uninstall.sh` |
 | `windows/` | Electron app: `src/main.js` (window, tray, hook server), `src/hooks.js` (settings.json), `src/renderer/` (sprite, brain, strings, settings page) |
-| `.github/workflows/build.yml` | builds the Windows `.exe` on every push to `main`; on a `v*` tag it also builds the macOS zip and publishes a release |
+| `.github/workflows/build.yml` | builds the Windows `.exe` and the universal macOS app on every push to `main`; on a `v*` tag it publishes a release |
 
 The two apps share the same sprite, moods and phrases. The JS renderer is a port of the Swift `BuddyView`/`Brain`/`Strings`.
 
@@ -91,3 +91,7 @@ npm run dist     # build the installer + portable exe (on Windows)
 ```
 
 If `npm start` behaves like plain Node inside a VS Code terminal, unset `ELECTRON_RUN_AS_NODE` first.
+
+## License
+
+[MIT](LICENSE). Clawd Buddy is an unofficial fan project and is not affiliated with or endorsed by Anthropic.
