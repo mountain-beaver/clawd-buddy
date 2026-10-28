@@ -4,15 +4,24 @@ const os = require("os");
 const path = require("path");
 
 const PORT = 47321;
-const HOOK_URL = `http://127.0.0.1:${PORT}/hook`;
+const HOST = `127.0.0.1:${PORT}`;
+const HOOK_BASE = `http://${HOST}/hook`;
 const SETTINGS = path.join(os.homedir(), ".claude", "settings.json");
 const BACKUP = SETTINGS + ".bak-clawdbuddy";
 const EVENTS = ["SessionStart", "UserPromptSubmit", "PreToolUse", "PostToolUseFailure", "Stop", "Notification"];
 const TOOL_EVENTS = new Set(["PreToolUse", "PostToolUseFailure"]);
 
+// A secret path, so other local programs and web pages can't feed the buddy fake events.
+let token = "";
+const setToken = (t) => { token = t; };
+const hookPath = () => `/hook/${token}`;
+const hookUrl = () => `http://${HOST}${hookPath()}`;
+
 const truncate = (s, n) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
-const isOurs = (h) => h && h.type === "http" && typeof h.url === "string" && h.url.startsWith(HOOK_URL);
+// Also matches entries from older versions without a token, so they get cleaned up.
+const isOurs = (h) => h && h.type === "http" && typeof h.url === "string" && h.url.startsWith(HOOK_BASE);
 const hasOurs = (group) => (group.hooks || []).some(isOurs);
+const hasCurrent = (group) => (group.hooks || []).some((h) => isOurs(h) && h.url === hookUrl());
 
 /** Boils a hook payload down to what the buddy needs. Mirrors macos/Sources/HookBridge.swift. */
 function normalize(j) {
@@ -78,10 +87,12 @@ function strip(settings) {
 function status() {
   try {
     const s = read();
-    const installed = EVENTS.every((e) => Array.isArray(s.hooks?.[e]) && s.hooks[e].some(hasOurs));
-    return { installed, error: false, path: SETTINGS };
+    const groups = (e) => (Array.isArray(s.hooks?.[e]) ? s.hooks[e] : []);
+    const installed = EVENTS.every((e) => groups(e).some(hasCurrent));
+    const outdated = !installed && EVENTS.some((e) => groups(e).some(hasOurs));
+    return { installed, outdated, error: false, path: SETTINGS };
   } catch {
-    return { installed: false, error: true, path: SETTINGS };
+    return { installed: false, outdated: false, error: true, path: SETTINGS };
   }
 }
 
@@ -90,7 +101,7 @@ function install() {
   if (!fs.existsSync(BACKUP) && fs.existsSync(SETTINGS)) fs.copyFileSync(SETTINGS, BACKUP);
   strip(s);
   s.hooks = s.hooks || {};
-  const ours = { type: "http", url: HOOK_URL, timeout: 2 };
+  const ours = { type: "http", url: hookUrl(), timeout: 2 };
   for (const e of EVENTS) {
     s.hooks[e] = s.hooks[e] || [];
     s.hooks[e].push(TOOL_EVENTS.has(e) ? { matcher: "*", hooks: [ours] } : { hooks: [ours] });
@@ -104,4 +115,4 @@ function uninstall() {
   write(s);
 }
 
-module.exports = { PORT, normalize, status, install, uninstall };
+module.exports = { PORT, HOST, setToken, hookPath, normalize, status, install, uninstall };

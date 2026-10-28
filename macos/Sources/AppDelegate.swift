@@ -16,6 +16,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var timer: Timer?
     private var prefsSub: AnyCancellable?
     private var manuallyHidden = false
+    private var hookPort: CFMessagePort?
 
     private var panelSize: NSSize {
         let s = prefs.size.scale
@@ -53,9 +54,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem.button?.image = BuddyView.statusIcon()
         statusItem.menu = buildMenu()
 
-        DistributedNotificationCenter.default().addObserver(
-            self, selector: #selector(onHookEvent(_:)), name: Bridge.notificationName,
-            object: nil, suspensionBehavior: .deliverImmediately)
+        listenForHooks()
         NotificationCenter.default.addObserver(
             self, selector: #selector(screensChanged), name: NSApplication.didChangeScreenParametersNotification, object: nil)
 
@@ -68,20 +67,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         RunLoop.main.add(t, forMode: .common)
         timer = t
 
-        if let info = launchEvent() { brain.handle(info) } else { brain.greet() }
+        brain.greet()
     }
 
-    /// The hook launches the app with the event that woke it up, so that first event isn't lost.
-    private func launchEvent() -> [String: String]? {
-        let args = CommandLine.arguments
-        guard let i = args.firstIndex(of: "--event"), i + 1 < args.count,
-              let data = args[i + 1].data(using: .utf8) else { return nil }
-        return (try? JSONSerialization.jsonObject(with: data)) as? [String: String]
-    }
-
-    @objc private func onHookEvent(_ n: Notification) {
-        guard let info = n.userInfo as? [String: String] else { return }
-        brain.handle(info)
+    /// Hook events arrive from `ClawdBuddy hook` over a local Mach port (see HookBridge).
+    private func listenForHooks() {
+        var context = CFMessagePortContext(version: 0, info: Unmanaged.passUnretained(self).toOpaque(),
+                                           retain: nil, release: nil, copyDescription: nil)
+        let callback: CFMessagePortCallBack = { _, _, data, info in
+            guard let info, let data = data as Data?,
+                  let event = (try? JSONSerialization.jsonObject(with: data)) as? [String: String] else { return nil }
+            Unmanaged<AppDelegate>.fromOpaque(info).takeUnretainedValue().brain.handle(event)
+            return nil
+        }
+        guard let port = CFMessagePortCreateLocal(nil, Bridge.portName, callback, &context, nil) else { return }
+        hookPort = port
+        CFRunLoopAddSource(CFRunLoopGetMain(), CFMessagePortCreateRunLoopSource(nil, port, 0), .commonModes)
     }
 
     private func tick() {

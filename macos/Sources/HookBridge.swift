@@ -1,7 +1,9 @@
 import AppKit
 
 enum Bridge {
-    static let notificationName = Notification.Name("com.clawdbuddy.event")
+    // A local Mach port lives in the user's own bootstrap namespace, so unlike a distributed
+    // notification nobody else can listen in on what Claude Code is doing.
+    static let portName = "com.clawdbuddy.app.events" as CFString
     static let bundleID = "com.clawdbuddy.app"
 }
 
@@ -10,14 +12,20 @@ enum HookBridge {
     static func run() {
         let data = FileHandle.standardInput.readDataToEndOfFile()
         let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
-        let info = normalize(json)
-
-        if NSRunningApplication.runningApplications(withBundleIdentifier: Bridge.bundleID).isEmpty {
-            launchApp(with: info)
-        } else {
-            DistributedNotificationCenter.default().postNotificationName(
-                Bridge.notificationName, object: nil, userInfo: info, deliverImmediately: true)
+        guard let payload = try? JSONSerialization.data(withJSONObject: normalize(json)) else { return }
+        if send(payload) { return }
+        if NSRunningApplication.runningApplications(withBundleIdentifier: Bridge.bundleID).isEmpty { launchApp() }
+        // Give a freshly launched app a moment to open its port, so the event that woke it isn't lost.
+        for _ in 0..<40 {
+            usleep(100_000)
+            if send(payload) { return }
         }
+    }
+
+    private static func send(_ payload: Data) -> Bool {
+        guard let port = CFMessagePortCreateRemote(nil, Bridge.portName) else { return false }
+        defer { CFMessagePortInvalidate(port) }
+        return CFMessagePortSendRequest(port, 0, payload as CFData, 1, 0, nil, nil) == kCFMessagePortSuccess
     }
 
     static func normalize(_ j: [String: Any]) -> [String: String] {
@@ -62,12 +70,10 @@ enum HookBridge {
         s.count > n ? String(s.prefix(n - 1)) + "…" : s
     }
 
-    private static func launchApp(with info: [String: String]) {
-        guard let payload = try? JSONSerialization.data(withJSONObject: info),
-              let arg = String(data: payload, encoding: .utf8) else { return }
+    private static func launchApp() {
         let p = Process()
         p.executableURL = URL(fileURLWithPath: "/usr/bin/open")
-        p.arguments = ["-g", "-a", Bundle.main.bundleURL.path, "--args", "--event", arg]
+        p.arguments = ["-g", "-a", Bundle.main.bundleURL.path]
         try? p.run()
         p.waitUntilExit()
     }

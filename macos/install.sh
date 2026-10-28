@@ -14,9 +14,10 @@ SETTINGS="$HOME/.claude/settings.json"
 CMD="\"$DEST/Contents/MacOS/ClawdBuddy\" hook"
 [ -f "$SETTINGS" ] || echo '{}' > "$SETTINGS"
 [ -f "$SETTINGS.bak-clawdbuddy" ] || cp "$SETTINGS" "$SETTINGS.bak-clawdbuddy"
-SRC=$(mktemp); cp "$SETTINGS" "$SRC"
+OUT=$(mktemp)
 
 # Drop any previous ClawdBuddy entries, then add ours (other hooks are kept).
+# Written to a temp file first, so settings.json survives if jq can't parse it.
 jq --arg cmd "$CMD" '
   def ours: {type: "command", command: $cmd, async: true, timeout: 5};
   .hooks //= {}
@@ -25,7 +26,8 @@ jq --arg cmd "$CMD" '
         ((.hooks[$e] // []) | map(select(((.hooks // []) | map(.command // "" | contains("ClawdBuddy")) | any) | not)))
         + [ if ($e == "PreToolUse" or $e == "PostToolUseFailure") then {matcher: "*", hooks: [ours]} else {hooks: [ours]} end ]
       ))
-' "$SRC" > "$SETTINGS"; rm -f "$SRC"
+' "$SETTINGS" > "$OUT" || { rm -f "$OUT"; echo "Could not parse $SETTINGS, hooks not added" >&2; exit 1; }
+mv "$OUT" "$SETTINGS"
 
 open "$DEST"
 echo "Installed to $DEST"

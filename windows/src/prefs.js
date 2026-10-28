@@ -1,4 +1,5 @@
 // Persisted settings in <userData>/prefs.json.
+const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 
@@ -41,9 +42,18 @@ class Prefs {
     return true;
   }
 
+  /** Secret part of the hook URL; created once. Not in DEFAULTS, so set() can't touch it. */
+  hookToken() {
+    if (typeof this.data.hookToken !== "string" || this.data.hookToken.length < 32) {
+      this.data.hookToken = crypto.randomBytes(24).toString("hex");
+      this.save();
+    }
+    return this.data.hookToken;
+  }
+
   /** What the renderers get to see. */
   get public() {
-    const { anchor, firstRunDone, ...rest } = this.data;
+    const { anchor, firstRunDone, hookToken, ...rest } = this.data;
     return rest;
   }
 

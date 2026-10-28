@@ -28,6 +28,11 @@ function start() {
   if (isMac) app.dock?.hide();
   prefs = new Prefs(app.getPath("userData"));
   L10n.lang = prefs.get("lang");
+  hooks.setToken(prefs.hookToken());
+  // Hooks from a version without the token would be rejected now, so point them at the new URL.
+  if (hooks.status().outdated) {
+    try { hooks.install(); } catch (e) { console.error("hooks upgrade:", e.message); }
+  }
   applyLoginItem();
 
   createBuddy();
@@ -177,7 +182,8 @@ for (const [channel, action] of [["hooks-connect", hooks.install], ["hooks-disco
 
 function startServer() {
   server = http.createServer((req, res) => {
-    if (req.method !== "POST" || !req.url.startsWith("/hook")) {
+    // Claude Code sends neither Origin nor a foreign Host; browsers (incl. DNS rebinding) do.
+    if (req.method !== "POST" || req.url !== hooks.hookPath() || req.headers.host !== hooks.HOST || req.headers.origin) {
       res.writeHead(404).end();
       return;
     }
