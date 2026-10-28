@@ -1,0 +1,94 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'">
+  <title>Clawd Buddy</title>
+  <link rel="stylesheet" href="settings.css">
+</head>
+<body>
+  <div class="titlebar"></div>
+  <main>
+    <header>
+      <div class="avatar"><canvas id="avatar"></canvas></div>
+      <div>
+        <h1>Clawd Buddy</h1>
+        <p class="muted" data-i18n="tagline"></p>
+      </div>
+    </header>
+
+    <h2 data-i18n="appearance"></h2>
+    <section class="card">
+      <div class="row">
+        <span data-i18n="language"></span>
+        <div class="seg" data-pref="lang">
+          <button data-value="en">English</button>
+          <button data-value="ru">Русский</button>
+        </div>
+      </div>
+      <div class="row">
+        <span data-i18n="bubbleStyle"></span>
+        <div class="seg" data-pref="bubbleStyle">
+          <button data-value="pixel" data-i18n="stylePixel"></button>
+          <button data-value="claude" data-i18n="styleClaude"></button>
+        </div>
+      </div>
+      <div class="row">
+        <span data-i18n="size"></span>
+        <div class="seg" data-pref="size">
+          <button data-value="small" data-i18n="sizeSmall"></button>
+          <button data-value="medium" data-i18n="sizeMedium"></button>
+          <button data-value="large" data-i18n="sizeLarge"></button>
+        </div>
+      </div>
+    </section>
+
+    <h2 data-i18n="behavior"></h2>
+    <section class="card">
+      <div class="stack">
+        <div class="row tight">
+          <span data-i18n="chattiness"></span>
+          <span class="muted" id="chattinessValue"></span>
+        </div>
+        <input type="range" id="chattiness" min="0" max="100" step="5">
+        <small class="muted" data-i18n="chattinessHint"></small>
+      </div>
+      <label class="row">
+        <span><span data-i18n="idleChatter"></span><small class="muted" data-i18n="idleChatterHint"></small></span>
+        <input type="checkbox" class="switch" data-pref="idleChatter">
+      </label>
+      <label class="row">
+        <span><span data-i18n="followMouse"></span><small class="muted" data-i18n="followMouseHint"></small></span>
+        <input type="checkbox" class="switch" data-pref="followMouse">
+      </label>
+      <label class="row">
+        <span><span data-i18n="hideWhenSleeping"></span><small class="muted" data-i18n="hideWhenSleepingHint"></small></span>
+        <input type="checkbox" class="switch" data-pref="hideWhenSleeping">
+      </label>
+      <label class="row" id="loginRow">
+        <span><span data-i18n="launchAtLogin"></span><small class="muted" data-i18n="launchAtLoginHint"></small></span>
+        <input type="checkbox" class="switch" data-pref="launchAtLogin">
+      </label>
+    </section>
+
+    <h2 data-i18n="claudeCode"></h2>
+    <section class="card">
+      <div class="row hooks">
+        <span class="status">
+          <i id="hooksDot"></i>
+          <span><span id="hooksText"></span><small class="muted" id="hooksHint"></small></span>
+        </span>
+        <span class="buttons">
+          <button class="ghost" id="hooksButton"></button>
+          <button class="accent" id="demo" data-i18n="playDemo"></button>
+        </span>
+      </div>
+    </section>
+
+    <footer class="muted" data-i18n="footer"></footer>
+  </main>
+  <script src="strings.js"></script>
+  <script src="buddy-view.js"></script>
+  <script src="settings.js"></script>
+</body>
+</html>

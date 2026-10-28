@@ -1,0 +1,97 @@
+/* Claude-flavoured palette: ivory paper, warm greys, clay accent. */
+:root {
+  --bg: #F5F4EE;
+  --card: #FFFFFF;
+  --border: #E6E3DA;
+  --track: #EDEBE3;
+  --text: #141413;
+  --muted: #73716B;
+  --accent: #D97757;
+  --accent-press: #C4673F;
+  --ok: #5E9A5A;
+  --serif: Georgia, "Iowan Old Style", "Times New Roman", serif;
+  --sans: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #262624; --card: #30302E; --border: #3E3D39; --track: #1F1E1D;
+    --text: #F5F4EF; --muted: #A6A39A; --ok: #7FB77E;
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text); font: 13.5px/1.35 var(--sans); }
+body { user-select: none; -webkit-user-select: none; }
+html { overflow-y: auto; }
+body { overflow: hidden; }
+
+.titlebar { height: 36px; -webkit-app-region: drag; position: sticky; top: 0; background: var(--bg); z-index: 1; }
+main { padding: 0 24px 20px; }
+
+header { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+.avatar {
+  padding: 12px; border-radius: 14px; background: var(--card); border: 1px solid var(--border); line-height: 0;
+}
+h1 { font: 400 28px/1.1 var(--serif); margin: 0 0 4px; letter-spacing: -0.2px; }
+h2 { font: 400 15px var(--serif); color: var(--muted); margin: 18px 0 8px 4px; }
+p { margin: 0; }
+
+.muted { color: var(--muted); }
+small { display: block; font-size: 11.5px; margin-top: 2px; }
+
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 4px 16px; }
+.row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 0; border-top: 1px solid var(--border);
+}
+.card > .row:first-child, .card > .stack:first-child { border-top: 0; }
+.row.tight { padding: 0; border: 0; }
+.stack { display: flex; flex-direction: column; gap: 8px; padding: 14px 0 12px; }
+label.row { cursor: default; }
+
+/* segmented control */
+.seg { display: inline-flex; gap: 2px; padding: 3px; border-radius: 9px; background: var(--track); }
+.seg button {
+  font: 12px var(--sans); color: var(--muted); background: transparent; border: 0;
+  padding: 5px 11px; border-radius: 7px; cursor: pointer; transition: background .15s, color .15s;
+}
+.seg button.on { background: var(--card); color: var(--text); font-weight: 600; box-shadow: 0 1px 2px rgba(0, 0, 0, .1); }
+
+/* slider */
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 2px; margin: 4px 0;
+  background: linear-gradient(to right, var(--accent) var(--fill, 30%), var(--track) var(--fill, 30%)); }
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #fff;
+  border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0, 0, 0, .2); cursor: pointer;
+}
+
+/* switch */
+.switch {
+  -webkit-appearance: none; appearance: none; flex: none; width: 38px; height: 22px; border-radius: 11px;
+  background: var(--track); border: 1px solid var(--border); position: relative; cursor: pointer; transition: background .2s;
+  margin: 0;
+}
+.switch::after {
+  content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, .25); transition: transform .2s;
+}
+.switch:checked { background: var(--accent); border-color: var(--accent); }
+.switch:checked::after { transform: translateX(16px); }
+
+/* hooks */
+.row.hooks { flex-wrap: wrap; row-gap: 10px; }
+.status { display: flex; align-items: center; gap: 10px; }
+.status i { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+.status i.ok { background: var(--ok); }
+.buttons { display: flex; gap: 8px; flex: none; margin-left: auto; }
+button.accent, button.ghost {
+  font: 500 12.5px var(--sans); border-radius: 8px; padding: 7px 14px; cursor: pointer; white-space: nowrap;
+}
+button.accent { background: var(--accent); color: #fff; border: 0; }
+button.accent:active { background: var(--accent-press); }
+button.ghost { background: transparent; color: var(--text); border: 1px solid var(--border); }
+button.ghost:hover { background: var(--track); }
+
+footer { text-align: center; font-size: 11.5px; margin-top: 18px; }

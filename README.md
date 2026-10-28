@@ -2,7 +2,7 @@
 
 <h1 align="center">Clawd Buddy</h1>
 
-<p align="center">A tiny pixel crab that lives in the corner of your Mac screen and reacts to what Claude Code is doing.</p>
+<p align="center">A tiny pixel crab that lives in the corner of your screen and reacts to what Claude Code is doing.<br>For macOS and Windows.</p>
 
 <p align="center">
   <img src="docs/bubble-claude.png" width="380" alt="Claude-style bubble">
@@ -19,7 +19,7 @@
 | Edit / Write | types on a little laptop, `{ } ; </>` fly out |
 | Read | reads a document |
 | Grep / Glob / Web | scurries around, looking left and right |
-| Bash | runs in place; tests, git commit/push, installs and builds get their own lines |
+| Bash / PowerShell | runs in place; tests, git commit/push, installs and builds get their own lines |
 | Tool fails | shakes it off: "Oops… let me fix that" |
 | Permission / question / waiting | waves at you until you answer |
 | Finished | jumps, confetti |
@@ -31,23 +31,35 @@ While idle it looks around, stretches, dances, waves, yawns and wiggles. Its eye
 
 Lines are a mix of what's actually happening and 150+ phrases per language, time-of-day greetings included. English by default, Russian available.
 
-## Install
+## Windows
+
+1. Download the latest build from **Releases**, or from the newest run under **Actions → Build → ClawdBuddy-windows**:
+   - `ClawdBuddy-Setup-x.y.z.exe`: installer
+   - `ClawdBuddy-x.y.z-portable.exe`: no install
+2. Run it. Settings open on first launch. Click **Connect** to add the hooks to `%USERPROFILE%\.claude\settings.json`.
+3. Restart any open Claude Code sessions.
+
+The app is unsigned, so SmartScreen may warn you. Click **More info → Run anyway**.
+
+The Windows version talks to Claude Code through HTTP hooks on `127.0.0.1:47321`. It starts with Windows by default (you can turn that off in Settings). That matters because while the app is closed, Claude Code can't reach it. **Disconnect** in Settings removes the hooks again.
+
+## macOS
 
 Requires macOS 13+ and Xcode Command Line Tools (`xcode-select --install`).
 
 ```bash
 git clone https://github.com/pe4enku0/clawd-buddy.git
-cd clawd-buddy
+cd clawd-buddy/macos
 ./install.sh
 ```
 
-This builds the app, copies it to `~/Applications/ClawdBuddy.app`, and adds async hooks to `~/.claude/settings.json`. Your other settings are kept, and the original file is backed up once as `settings.json.bak-clawdbuddy`. If the app isn't running, the next Claude Code event starts it.
+This builds a native Swift app into `~/Applications/ClawdBuddy.app` and adds async hooks to `~/.claude/settings.json`. Your other settings are kept, and the original file is backed up once as `settings.json.bak-clawdbuddy`. If the app isn't running, the next Claude Code event starts it. `./uninstall.sh` removes the app and its hooks.
 
 ## Use
 
 - **Drag** the crab anywhere. The position is remembered.
 - **Click** the crab to poke it. Click the bubble to dismiss it.
-- **Right-click** the crab, or use the crab in the menu bar, for **Settings…** (⌘,), language, demo, hide/show, reset position, quit.
+- **Right-click** the crab, or use the tray / menu bar icon, for **Settings…**, language, demo, hide/show, reset position, quit.
 
 <p align="center"><img src="docs/settings.png" width="360" alt="Settings window"></p>
 
@@ -56,33 +68,26 @@ Settings:
 - **Bubble**: Pixel or Claude style. The Claude style follows light/dark mode.
 - **Size**: Small, Medium or Large.
 - **Chattiness**: how often it jokes instead of describing the work.
-- **Idle chatter**, **follow the cursor**, **hide when sleeping**.
+- **Idle chatter**, **follow the cursor**, **hide when sleeping**, and on Windows **start with Windows**.
 - **Hook status**, plus a **Play demo** button that runs through every animation.
 
-The buddy window is click-through except for the crab and its bubble, never takes focus, and shows on every Space.
+## Repository
 
-## Uninstall
+| Folder | |
+|---|---|
+| `macos/` | native Swift/AppKit + SwiftUI app; `build.sh`, `install.sh`, `uninstall.sh` |
+| `windows/` | Electron app: `src/main.js` (window, tray, hook server), `src/hooks.js` (settings.json), `src/renderer/` (sprite, brain, strings, settings page) |
+| `.github/workflows/build.yml` | builds the Windows `.exe` on every push to `main`; on a `v*` tag it also builds the macOS zip and publishes a release |
+
+The two apps share the same sprite, moods and phrases. The JS renderer is a port of the Swift `BuddyView`/`Brain`/`Strings`.
+
+### Windows development
 
 ```bash
-./uninstall.sh
+cd windows
+npm install
+npm start        # run it (works on macOS too)
+npm run dist     # build the installer + portable exe (on Windows)
 ```
 
-Removes the app and only the Clawd Buddy hooks.
-
-## How it works
-
-One Swift binary, three modes:
-
-- `ClawdBuddy hook`: Claude Code runs this. It reads the hook JSON from stdin, reduces it to `{event, tool, detail}`, and posts it as a macOS distributed notification.
-- `ClawdBuddy make-icon <dir>`: renders the app icon from the same sprite code (used by `build.sh`).
-- `ClawdBuddy`: the buddy itself.
-
-| File | |
-|---|---|
-| `Sources/BuddyView.swift` | sprite, poses, props, particles, bubbles, mouse |
-| `Sources/Brain.swift` | hook event → mood, line, idle routines |
-| `Sources/Strings.swift` | all EN/RU text |
-| `Sources/SettingsWindow.swift` | SwiftUI settings in a Claude-like style |
-| `Sources/Prefs.swift` | persisted settings |
-| `Sources/HookBridge.swift` | the `hook` mode |
-| `Sources/Icon.swift` | app icon renderer |
+If `npm start` behaves like plain Node inside a VS Code terminal, unset `ELECTRON_RUN_AS_NODE` first.

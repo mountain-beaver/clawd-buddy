@@ -1,0 +1,47 @@
+{
+  "name": "clawd-buddy",
+  "productName": "Clawd Buddy",
+  "version": "1.1.0",
+  "description": "A pixel crab desktop companion that reacts to Claude Code (unofficial fan project)",
+  "author": "pe4enku0",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "icons": "node scripts/make-tray-icons.js",
+    "dist": "electron-builder --win --publish never"
+  },
+  "build": {
+    "appId": "com.clawdbuddy.app",
+    "productName": "Clawd Buddy",
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "ClawdBuddy-Setup-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "ClawdBuddy-${version}-portable.${ext}"
+    }
+  },
+  "devDependencies": {
+    "electron": "^45.1.0",
+    "electron-builder": "^26.18.0"
+  }
+}

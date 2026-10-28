@@ -1,0 +1,60 @@
+// Persisted settings in <userData>/prefs.json.
+const fs = require("fs");
+const path = require("path");
+
+const DEFAULTS = {
+  lang: "en",
+  bubbleStyle: "pixel",
+  size: "medium",
+  chattiness: 0.3,
+  idleChatter: true,
+  followMouse: true,
+  hideWhenSleeping: false,
+  launchAtLogin: true,
+  anchor: null, // top-right corner of the buddy window, in screen DIPs
+  firstRunDone: false,
+};
+
+const VALID = {
+  lang: ["en", "ru"],
+  bubbleStyle: ["pixel", "claude"],
+  size: ["small", "medium", "large"],
+};
+
+class Prefs {
+  constructor(dir) {
+    this.file = path.join(dir, "prefs.json");
+    let saved = {};
+    try { saved = JSON.parse(fs.readFileSync(this.file, "utf8")); } catch {}
+    this.data = { ...DEFAULTS, ...saved };
+  }
+
+  get(key) { return this.data[key]; }
+
+  set(key, value) {
+    if (!(key in DEFAULTS)) return false;
+    if (VALID[key] && !VALID[key].includes(value)) return false;
+    if (typeof DEFAULTS[key] === "boolean") value = !!value;
+    if (key === "chattiness") value = Math.min(1, Math.max(0, Number(value) || 0));
+    this.data[key] = value;
+    this.save();
+    return true;
+  }
+
+  /** What the renderers get to see. */
+  get public() {
+    const { anchor, firstRunDone, ...rest } = this.data;
+    return rest;
+  }
+
+  save() {
+    try {
+      fs.mkdirSync(path.dirname(this.file), { recursive: true });
+      fs.writeFileSync(this.file, JSON.stringify(this.data, null, 2));
+    } catch (e) {
+      console.error("prefs save failed", e);
+    }
+  }
+}
+
+module.exports = { Prefs };
